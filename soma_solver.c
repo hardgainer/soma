@@ -58,7 +58,7 @@ int main()
 								int sol = fig_v[i0]+fig_t[i1]+fig_l[i2]+fig_z[i3]+fig_p[i4]+fig_a[i5]+fig_b[i6];
 								if (sol == solution)
 								{
-									fprintf(stderr, "Solution #%d\n", ++num_solutions);
+									fprintf(stderr, "\nSolution #%d\n", ++num_solutions);
 									fprintf(fout, "%d,%d,%d,%d,%d,%d,%d\n", fig_v[i0],fig_t[i1],fig_l[i2],fig_z[i3],fig_p[i4],fig_a[i5],fig_b[i6]);
 									fflush(fout);
 								}
@@ -67,8 +67,8 @@ int main()
 					}
 				}
 			}
-			fprintf(stderr, "%d %d\n", i0, i1);
 		}
+		fprintf(stderr, "%d ", i0);
 	}
 	fclose(fout);
 	return 0;
