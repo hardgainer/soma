@@ -1,11 +1,11 @@
-PRJ = soma
+PRJ=soma
 
-CC = c99
-SRCS = $(wildcard *.c)
-OBJS = $(SRCS:.c=.o)
+CC=c99
+SRCS := soma_solver.c $(wildcard fig*.c)
+OBJS := $(SRCS:.c=.o)
 
-CFLAGS = -O2 -Wall
-#LDFLAGS = -o $(PRJ)
+CFLAGS := -O2 -Wall -pthread
+LDLIBS := -lpthread
 
 all: $(PRJ)
 
