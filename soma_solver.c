@@ -1,10 +1,10 @@
-// gcc -O2 -Wall -std=c99 -o soma *.c && ./soma
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <pthread.h>
 #include <semaphore.h>
+#include "nums_from_file.h"
 
 typedef struct solve_param_t
 {
@@ -12,13 +12,7 @@ typedef struct solve_param_t
 	int num_solutions;
 } solve_param_t;
 
-extern const int fig_a[], size_fig_a;
-extern const int fig_b[], size_fig_b;
-extern const int fig_l[], size_fig_l;
-extern const int fig_p[], size_fig_p;
-extern const int fig_t[], size_fig_t;
-extern const int fig_v[], size_fig_v;
-extern const int fig_z[], size_fig_z;
+dyn_array_int_t fig_a, fig_b, fig_l, fig_p, fig_t, fig_v, fig_z;
 FILE *fout;
 pthread_mutex_t mutex;
 
@@ -28,30 +22,30 @@ void *solve(void* in)
 	const int solution = (1<<27)-1;
 	int i0 = pparm->v_num;
 
-	for (int i1=0; i1 < size_fig_t; i1++)
+	for (int i1=0; i1 < fig_t.size; i1++)
 	{
-		if (fig_t[i1] & fig_v[i0]) continue;
-		for (int i2=0; i2 < size_fig_l; i2++)
+		if (fig_t.vals[i1] & fig_v.vals[i0]) continue;
+		for (int i2=0; i2 < fig_l.size; i2++)
 		{
-			if (fig_l[i2] & fig_t[i1]) continue;
-			for (int i3=0; i3 < size_fig_z; i3++)
+			if (fig_l.vals[i2] & fig_t.vals[i1]) continue;
+			for (int i3=0; i3 < fig_z.size; i3++)
 			{
-				if (fig_z[i3] & fig_l[i2]) continue;
-				for (int i4=0; i4 < size_fig_p; i4++)
+				if (fig_z.vals[i3] & fig_l.vals[i2]) continue;
+				for (int i4=0; i4 < fig_p.size; i4++)
 				{
-					if (fig_p[i4] & fig_z[i3]) continue;
-					for (int i5=0; i5 < size_fig_a; i5++)
+					if (fig_p.vals[i4] & fig_z.vals[i3]) continue;
+					for (int i5=0; i5 < fig_a.size; i5++)
 					{
-						if (fig_a[i5] & fig_p[i4]) continue;
-						for (int i6=0; i6 < size_fig_b; i6++)
+						if (fig_a.vals[i5] & fig_p.vals[i4]) continue;
+						for (int i6=0; i6 < fig_b.size; i6++)
 						{
-							if (fig_b[i6] & fig_a[i5]) continue;
-							int sol = fig_v[i0]+fig_t[i1]+fig_l[i2]+fig_z[i3]+fig_p[i4]+fig_a[i5]+fig_b[i6];
+							if (fig_b.vals[i6] & fig_a.vals[i5]) continue;
+							int sol = fig_v.vals[i0]+fig_t.vals[i1]+fig_l.vals[i2]+fig_z.vals[i3]+fig_p.vals[i4]+fig_a.vals[i5]+fig_b.vals[i6];
 							if (sol == solution)
 							{
 								pthread_mutex_lock(&mutex);
 								fprintf(stderr, "\nSolution #%d\n", ++(pparm->num_solutions));
-								fprintf(fout, "%d,%d,%d,%d,%d,%d,%d\n", fig_v[i0],fig_t[i1],fig_l[i2],fig_z[i3],fig_p[i4],fig_a[i5],fig_b[i6]);
+								fprintf(fout, "%d,%d,%d,%d,%d,%d,%d\n", fig_v.vals[i0],fig_t.vals[i1],fig_l.vals[i2],fig_z.vals[i3],fig_p.vals[i4],fig_a.vals[i5],fig_b.vals[i6]);
 								fflush(fout);
 								pthread_mutex_unlock(&mutex);
 							}
@@ -74,11 +68,27 @@ int main()
 		exit(EXIT_FAILURE);
 	}
 
-	pthread_mutex_init(&mutex, NULL);
-	pthread_t thr[size_fig_v];
-	solve_param_t sol_params[size_fig_v];
+	fig_v = nums_from_file("fig_v");
+	fig_t = nums_from_file("fig_t");
+	fig_l = nums_from_file("fig_l");
+	fig_z = nums_from_file("fig_z");
+	fig_p = nums_from_file("fig_p");
+	fig_a = nums_from_file("fig_a");
+	fig_b = nums_from_file("fig_b");
 
-	for (int i = 0; i < size_fig_v; i++)
+	if (0 == (fig_v.size + fig_t.size + fig_l.size + fig_z.size + fig_p.size + fig_a.size + fig_b.size))
+	{
+		perror("input data error");
+		exit(EXIT_FAILURE);
+	}
+
+	printf("%d %d %d %d %d %d %d\n", fig_v.size, fig_t.size, fig_l.size, fig_z.size, fig_p.size, fig_a.size, fig_b.size);
+
+	pthread_mutex_init(&mutex, NULL);
+	pthread_t thr[fig_v.size];
+	solve_param_t sol_params[fig_v.size];
+
+	for (int i = 0; i < fig_v.size; i++)
 	{
 		sol_params[i].v_num = i;
 		sol_params[i].num_solutions = 0;
@@ -86,7 +96,7 @@ int main()
 	}
 
 	int total_solutions = 0;
-	for (int i = 0; i < size_fig_v; i++)
+	for (int i = 0; i < fig_v.size; i++)
 	{
 		pthread_join(thr[i], NULL);
 		total_solutions += sol_params[i].num_solutions;
@@ -95,6 +105,14 @@ int main()
 	pthread_mutex_destroy(&mutex);
 	fclose(fout);
 	printf("Total solutions: %d\n", total_solutions);
+
+	deinit_dyn_array(&fig_v);
+	deinit_dyn_array(&fig_t);
+	deinit_dyn_array(&fig_l);
+	deinit_dyn_array(&fig_z);
+	deinit_dyn_array(&fig_p);
+	deinit_dyn_array(&fig_a);
+	deinit_dyn_array(&fig_b);
 	return 0;
 }
 

@@ -118,12 +118,9 @@ def figures_to_bin(figures, dct):
 
 def dump_figure_bins(bins, filename):
     "Сохраняет список чисел-положений в указанный файл (без расширения) (C-формат)"
-    out = open(filename+'.c', 'w')
-    print('const int %s[] = {' % filename, file=out)
+    out = open(filename, 'w')
     for n in bins:
         print('%s,' % n, file=out)
-    print('};\n', file=out)
-    print('const int size_%s = sizeof(%s) / sizeof(%s[0]);' % ((filename,)*3), file=out);
     out.close()
 
 if __name__ == '__main__':
