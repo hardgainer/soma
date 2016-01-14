@@ -19,33 +19,40 @@ pthread_mutex_t mutex;
 void *solve(void* in)
 {
 	solve_param_t *pparm = in;
-	const int solution = (1<<27)-1;
+	const long solution = (1<<27)-1;
 	int i0 = pparm->v_num;
 
+	long fs0 = fig_v.vals[i0];		// fs - filled space
 	for (int i1=0; i1 < fig_t.size; i1++)
 	{
-		if (fig_t.vals[i1] & fig_v.vals[i0]) continue;
+		if (fig_t.vals[i1] & fs0) continue;
+		long fs1 = fig_t.vals[i1] ^ fs0;
 		for (int i2=0; i2 < fig_l.size; i2++)
 		{
-			if (fig_l.vals[i2] & fig_t.vals[i1]) continue;
+			if (fig_l.vals[i2] & fs1) continue;
+			long fs2 = fig_l.vals[i2] ^ fs1;
 			for (int i3=0; i3 < fig_z.size; i3++)
 			{
-				if (fig_z.vals[i3] & fig_l.vals[i2]) continue;
+				if (fig_z.vals[i3] & fs2) continue;
+				long fs3 = fig_z.vals[i3] ^ fs2;
 				for (int i4=0; i4 < fig_p.size; i4++)
 				{
-					if (fig_p.vals[i4] & fig_z.vals[i3]) continue;
+					if (fig_p.vals[i4] & fs3) continue;
+					long fs4 = fig_p.vals[i4] ^ fs3;
 					for (int i5=0; i5 < fig_a.size; i5++)
 					{
-						if (fig_a.vals[i5] & fig_p.vals[i4]) continue;
+						if (fig_a.vals[i5] & fs4) continue;
+						long fs5 = fig_a.vals[i5] ^ fs4;
 						for (int i6=0; i6 < fig_b.size; i6++)
 						{
-							if (fig_b.vals[i6] & fig_a.vals[i5]) continue;
-							int sol = fig_v.vals[i0]+fig_t.vals[i1]+fig_l.vals[i2]+fig_z.vals[i3]+fig_p.vals[i4]+fig_a.vals[i5]+fig_b.vals[i6];
-							if (sol == solution)
+							if (fig_b.vals[i6] & fs5) continue;
+							long fs6 = fig_b.vals[i6] ^ fs5;
+							if (fs6 == solution)
 							{
 								pthread_mutex_lock(&mutex);
-								fprintf(stderr, "\nSolution #%d\n", ++(pparm->num_solutions));
-								fprintf(fout, "%d,%d,%d,%d,%d,%d,%d\n", fig_v.vals[i0],fig_t.vals[i1],fig_l.vals[i2],fig_z.vals[i3],fig_p.vals[i4],fig_a.vals[i5],fig_b.vals[i6]);
+								fprintf(stderr, "(%d) Solution #%d\n", i0, ++(pparm->num_solutions));
+								fprintf(fout, "%d,%d,%d,%d,%d,%d,%d\n", \
+										fig_v.vals[i0],fig_t.vals[i1],fig_l.vals[i2],fig_z.vals[i3],fig_p.vals[i4],fig_a.vals[i5],fig_b.vals[i6]);
 								fflush(fout);
 								pthread_mutex_unlock(&mutex);
 							}

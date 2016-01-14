@@ -117,10 +117,12 @@ def figures_to_bin(figures, dct):
     return list(set(bin_pos))
 
 def dump_figure_bins(bins, filename):
-    "Сохраняет список чисел-положений в указанный файл (без расширения) (C-формат)"
+    "Сохраняет список чисел-положений в указанный файл"
     out = open(filename, 'w')
     for n in bins:
-        print('%s,' % n, file=out)
+        if n >= 2**63:
+            n -= 2**64
+        print('%d,' % n, file=out)
     out.close()
 
 if __name__ == '__main__':
@@ -253,4 +255,3 @@ if __name__ == '__main__':
             # ll.append(poss)
     # pprint(ll)
     # print(len(ll))
-
