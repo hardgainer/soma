@@ -157,20 +157,20 @@ def enter_n_points(n):
 
 ################################################################################
 if __name__ == '__main__':
-    ans = input('Ввести фигуру (yes/no): ')
-    if ans.lower()[0] == 'y':
+    ans = input('Ввести фигуру (yes/[no]): ')
+    if len(ans) > 0 and ans.lower()[0] == 'y':
         ps = enter_n_points(27)
         figure = [(int(x[0]),int(x[1]),int(x[2])) for x in ps]
         ans = input('Сохранить фигуру (yes/no): ')
-        if ans.lower()[0] == 'y':
+        if len(ans) > 0 and ans.lower()[0] == 'y':
             ans = input('Введите название фигуры: ')
             file_fig = open('figures.txt', 'a')
             fig_data = '%s: ' % ans + ','.join(ps) + '\n'
             file_fig.write(fig_data)
             file_fig.close()
     else:
-        ans = input('Решить сохранённую фигуру (yes/no): ')
-        if ans.lower()[0] == 'y':
+        ans = input('Решить сохранённую фигуру (yes/[no]): ')
+        if len(ans) > 0 and ans.lower()[0] == 'y':
             figs = {}
             for l in open('figures.txt').readlines():
                 (name, data) = l.split(':')[:2]
@@ -208,13 +208,12 @@ if __name__ == '__main__':
     dump_figure_bins(all[6], 'fig_b')
 
     # решаем
-    num_solves = 0
+    solutions = []
+    order = ['v','t','l','z','p','a','b']
     fsol = open('sols_py.log', 'w')
-    flog = open('/tmp/soma_perf.log', 'w')
     start_time = int(time())
     for i0 in range(lens[0]):
-        print(ctime()[10:20], i0, file=flog)
-        flog.flush()
+        print('%s%%  \r' % (100*i0//lens[0]), file=stderr, end='')
         f0 = all[0][i0]
         fs0 = f0        # filled space
         for i1 in range(lens[1]):
@@ -241,39 +240,40 @@ if __name__ == '__main__':
                                 f6 = all[6][i6]
                                 if f6 & fs5 != 0: continue
                                 if f6 ^ fs5 == 2**27-1:
-                                    num_solves += 1
-                                    print("Solve #%s:" % num_solves, file=fsol)
-                                    print("%30s" % format(f0,'b'), file=fsol)
-                                    print("%30s" % format(f1,'b'), file=fsol)
-                                    print("%30s" % format(f2,'b'), file=fsol)
-                                    print("%30s" % format(f3,'b'), file=fsol)
-                                    print("%30s" % format(f4,'b'), file=fsol)
-                                    print("%30s" % format(f5,'b'), file=fsol)
-                                    print("%30s" % format(f6,'b'), file=fsol)
+                                    sol = (f0,f1,f2,f3,f4,f5,f6)
+                                    solutions.append(sol)
+                                    print(','.join(map(str, sol)), file=fsol)   # печать чисел без скобок
     fsol.close()
-    flog.close()
-    print('Найдено %d решений. %d секунд затрачено.' % (num_solves, int(time() - start_time)))
+    print('Найдено %d решений. %d секунд затрачено.' % (len(solutions), int(time() - start_time)))
+    if len(solutions) == 0: exit(0)
 
-    exit(0)
     # проверяем решение
     bin_coord = gen_bin_coord_dict(figure)
-    order = ['v','t','l','z','p','a','b']
-    sol = [
-        #16420,263681,131520,100761600,9963520,4122,23076864
-        #5632,23330816,131520,100761600,9963520,16422,8217
-        #4609,23330816,456,100761600,9963520,155664,1062
-        #4609,23330816,456,100761600,9963520,9222,147504
-        #4609,23330816,33216,147492,9963520,100737024,1050
-        #16420,263681,67240320,33652800,9963520,4122,23076864
-        #5632,1067012,456,51,52461568,75694080,4988928,
-        172032,4880,345088,2210,77,121634816,12058624
-    ]
-    fig_num = 0
-    for n in sol:
-        solution = []
-        for i in range(27):
-            if (1<<i) & n != 0:
-                solution.append(bin_coord[1<<i])
-        print('%s %28s  ' % (order[fig_num], format(n,'b')), end='')
-        print(solution)
-        fig_num += 1
+    while True:
+        ans = input('Напечатать решение (yes/[no]): ')
+        if len(ans) == 0 or ans.lower()[0] == 'n':
+            exit(0)
+
+        while True:
+            ans = input('Введите номер решения: ')
+            try:
+                sol_num = int(ans)
+                if sol_num > len(solutions):
+                    print('Слишком большой номер.')
+                    continue
+                if sol_num <= 0:
+                    print('Номер должен быть положительным.')
+                    continue
+                break
+            except: pass
+
+        sol = solutions[sol_num-1]
+        fig_num = 0
+        for n in sol:
+            solution = []
+            for i in range(27):
+                if (1<<i) & n != 0:
+                    solution.append(bin_coord[1<<i])
+            print('%s %28s  ' % (order[fig_num], format(n,'b')), end='')
+            print(solution)
+            fig_num += 1
