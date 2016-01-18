@@ -1,7 +1,8 @@
 from functools import reduce
 from pprint import pprint
 from time import ctime,time
-from sys import exit
+from sys import exit,stderr
+from collections import OrderedDict
 
 # фигуры сома
 # описываются как кортеж занимаемых в пространстве точек (x,y,z)
@@ -125,49 +126,72 @@ def dump_figure_bins(bins, filename):
         print('%d,' % n, file=out)
     out.close()
 
-if __name__ == '__main__':
-    #cube = gen_cube(3)
-    cube = [
-            # фигура №8
-            (0,0,0),(0,0,1),(1,0,0),(1,0,1),
-            (0,1,0),(0,1,1),(1,1,0),(1,1,1),
-            (0,2,0),(0,2,1),(1,2,0),(1,2,1),
-            (0,3,0),(0,3,1),(1,3,0),(1,3,1),
-            (0,4,0),(0,4,1),(1,4,0),(1,4,1),
-            (0,5,0),(0,5,1),(1,5,0),(1,5,1),
-            (0,6,0),(0,6,1),(1,6,0)
-            # фигура №24 - нет решения ?
-            #(2,0,0),(1,0,1),(2,0,1),(3,0,1),
-            #(0,0,2),(1,0,2),(2,0,2),(3,0,2),(4,0,2),
-            #(2,0,4),(1,0,3),(2,0,3),(3,0,3),
-            #(2,1,0),(1,1,1),(2,1,1),(3,1,1),
-            #(0,1,2),(1,1,2),(2,1,2),(3,1,2),(4,1,2),
-            #(2,1,4),(1,1,3),(2,1,3),(3,1,3),
-            #(2,2,2)
-            # фигура №29 - нет решения ?
-            #(0,0,0),(0,0,1),(1,0,0),(1,0,1),(2,0,0),(2,0,1),(2,0,2),(1,0,2),(0,0,2),
-            #(0,1,0),(0,1,1),(1,1,0),(1,1,1),
-            #(0,2,0),(0,2,1),(1,2,0),(1,2,1),
-            #(0,3,0),(0,3,1),(1,3,0),(1,3,1),
-            #(0,4,0),(0,4,1),(1,4,0),(1,4,1),
-            #(0,5,0),(0,6,0)
-            # фигура №33 - нет решения ?
-            #(2,0,0),(3,0,0),(4,0,0),(2,0,1),
-            #(0,0,2),(1,0,2),(2,0,2),(0,0,3),(0,0,4),
-            #(2,1,0),(3,1,0),(4,1,0),(2,1,1),
-            #(0,1,2),(1,1,2),(2,1,2),(0,1,3),(0,1,4),
-            #(2,2,0),(3,2,0),(4,2,0),(2,2,1),
-            #(0,2,2),(1,2,2),(2,2,2),(0,2,3),(0,2,4),
-            ]
-    #print(cube)
-    if len(set(cube)) != 27:
-        print('Фигура задана неправильно!')
-        exit(1)
+def enter_n_points(n):
+    """Ввод n-точечной фигуры в виде триплетов 'xyz'"""
+    prompt = 'Введите фигуру (%d точек через запятую): '
+    points = []
+    while len(points) < n:
+        s = input(prompt % (n - len(points)))
+        pts = [x.strip() for x in s.split(',') if len(x) > 0]   # обрезаем и удаляем пустые
+        points.extend([x for x in pts if len(x) == 3])          # оставляем только триплеты
+        for x in points:
+            for i in range(3):
+                if not x[i] in '0123456789':
+                    points.remove(x)          # оставляем только цифры
+                    break
+        # points = list(set(points))      # оставляем только уникальные
+        points = list(OrderedDict.fromkeys(points))      # оставляем только уникальные
+        print('Вы ввели: %s' %  points)
+        prompt = 'Введите ещё %d точек: '
+    return points
 
-    coord_bin = gen_coord_bin_dict(cube)
+# def read_points(n,s):
+    # """Заполнение n-точечной фигуры из строки триплетов 'xyz,...'"""
+    # pts = [x.strip() for x in s.split(',') if len(x) > 0]   # обрезаем и удаляем пустые
+    # points.extend([x for x in pts if len(x) == 3])          # оставляем только триплеты
+    # for x in points:
+        # for i in range(3):
+            # if not x[i] in '0123456789':
+                # points.remove(x)          # оставляем только цифры
+                # break
+
+################################################################################
+if __name__ == '__main__':
+    ans = input('Ввести фигуру (yes/no): ')
+    if ans.lower()[0] == 'y':
+        ps = enter_n_points(27)
+        figure = [(int(x[0]),int(x[1]),int(x[2])) for x in ps]
+        ans = input('Сохранить фигуру (yes/no): ')
+        if ans.lower()[0] == 'y':
+            ans = input('Введите название фигуры: ')
+            file_fig = open('figures.txt', 'a')
+            fig_data = '%s: ' % ans + ','.join(ps) + '\n'
+            file_fig.write(fig_data)
+            file_fig.close()
+    else:
+        ans = input('Решить сохранённую фигуру (yes/no): ')
+        if ans.lower()[0] == 'y':
+            figs = {}
+            for l in open('figures.txt').readlines():
+                (name, data) = l.split(':')[:2]
+                figs[name] = data.strip()
+            ans = input('Введите название фигуры: ')
+            if not ans in figs:
+                print('Фигура не найдена.')
+                exit(1)
+            print(figs[ans])
+            ps = [x.strip() for x in figs[ans].split(',')]
+            figure = [(int(x[0]),int(x[1]),int(x[2])) for x in ps]
+            if len(figure) != 27:
+                print('Фигура задана неправильно.')
+                exit(1)
+        else:
+            figure = gen_cube(3)
+
+    coord_bin = gen_coord_bin_dict(figure)
     # f_all_bin = figures_to_bin(f_all, coord_bin)
     # for fig in f_all_bin: print(bin(fig))
-    all = [figures_to_bin(gen_all_positions(f, cube), coord_bin) for f in [fv, ft, fl, fz, fp, fa, fb]]
+    all = [figures_to_bin(gen_all_positions(f, figure), coord_bin) for f in [fv, ft, fl, fz, fp, fa, fb]]
     # print(len(all))
     lens = [len(x) for x in all]
     print(lens)
@@ -183,8 +207,56 @@ if __name__ == '__main__':
     dump_figure_bins(all[5], 'fig_a')
     dump_figure_bins(all[6], 'fig_b')
 
+    # решаем
+    num_solves = 0
+    fsol = open('sols_py.log', 'w')
+    flog = open('/tmp/soma_perf.log', 'w')
+    start_time = int(time())
+    for i0 in range(lens[0]):
+        print(ctime()[10:20], i0, file=flog)
+        flog.flush()
+        f0 = all[0][i0]
+        fs0 = f0        # filled space
+        for i1 in range(lens[1]):
+            f1 = all[1][i1]
+            if f1 & fs0 != 0: continue
+            fs1 = f1 ^ fs0
+            for i2 in range(lens[2]):
+                f2 = all[2][i2]
+                if f2 & fs1 != 0: continue
+                fs2 = f2 ^ fs1
+                for i3 in range(lens[3]):
+                    f3 = all[3][i3]
+                    if f3 & fs2 != 0: continue
+                    fs3 = f3 ^ fs2
+                    for i4 in range(lens[4]):
+                        f4 = all[4][i4]
+                        if f4 & fs3 != 0: continue
+                        fs4 = f4 ^ fs3
+                        for i5 in range(lens[5]):
+                            f5 = all[5][i5]
+                            if f5 & fs4 != 0: continue
+                            fs5 = f5 ^ fs4
+                            for i6 in range(lens[6]):
+                                f6 = all[6][i6]
+                                if f6 & fs5 != 0: continue
+                                if f6 ^ fs5 == 2**27-1:
+                                    num_solves += 1
+                                    print("Solve #%s:" % num_solves, file=fsol)
+                                    print("%30s" % format(f0,'b'), file=fsol)
+                                    print("%30s" % format(f1,'b'), file=fsol)
+                                    print("%30s" % format(f2,'b'), file=fsol)
+                                    print("%30s" % format(f3,'b'), file=fsol)
+                                    print("%30s" % format(f4,'b'), file=fsol)
+                                    print("%30s" % format(f5,'b'), file=fsol)
+                                    print("%30s" % format(f6,'b'), file=fsol)
+    fsol.close()
+    flog.close()
+    print('Найдено %d решений. %d секунд затрачено.' % (num_solves, int(time() - start_time)))
+
+    exit(0)
     # проверяем решение
-    bin_coord = gen_bin_coord_dict(cube)
+    bin_coord = gen_bin_coord_dict(figure)
     order = ['v','t','l','z','p','a','b']
     sol = [
         #16420,263681,131520,100761600,9963520,4122,23076864
@@ -198,60 +270,10 @@ if __name__ == '__main__':
     ]
     fig_num = 0
     for n in sol:
-        figure = []
+        solution = []
         for i in range(27):
             if (1<<i) & n != 0:
-                figure.append(bin_coord[1<<i])
+                solution.append(bin_coord[1<<i])
         print('%s %28s  ' % (order[fig_num], format(n,'b')), end='')
-        print(figure)
+        print(solution)
         fig_num += 1
-    exit(0)
-
-    # решаем
-    # этот алгоритм решает примерно 1 млн комбинаций в секунду (нужно ~63e6 секунд)
-    num_solves = 0
-    start_time = int(time())
-    for i0 in range(lens[0]):
-        f0 = all[0][i0]
-        for i1 in range(lens[1]):
-            f1 = all[1][i1]
-            if f1 & f0 != 0: continue
-            for i2 in range(lens[2]):
-                f2 = all[2][i2]
-                if f2 & f1 != 0: continue
-                for i3 in range(lens[3]):
-                    f3 = all[3][i3]
-                    if f3 & f2 != 0: continue
-                    for i4 in range(lens[4]):
-                        f4 = all[4][i4]
-                        if f4 & f3 != 0: continue
-                        for i5 in range(lens[5]):
-                            f5 = all[5][i5]
-                            if f5 & f4 != 0: continue
-                            for i6 in range(lens[6]):
-                                f6 = all[6][i6]
-                                if f6 & f5 != 0: continue
-                                if f0+f1+f2+f3+f4+f5+f6 == 2^27-1:
-                                    num_solves += 1
-                                    print("Solve #%s:" % num_solves)
-                                    print("%30s" % format(f0,'b'))
-                                    print("%30s" % format(f1,'b'))
-                                    print("%30s" % format(f2,'b'))
-                                    print("%30s" % format(f3,'b'))
-                                    print("%30s" % format(f4,'b'))
-                                    print("%30s" % format(f5,'b'))
-                                    print("%30s" % format(f6,'b'))
-                                cnt = 1+i6+i5*lens[6]+i4*lens[6]*lens[5]+i3*lens[6]*lens[5]*lens[4]+i2*lens[6]*lens[5]*lens[4]*lens[3]+i1*lens[6]*lens[5]*lens[4]*lens[3]*lens[2]+i0*lens[6]*lens[5]*lens[4]*lens[3]*lens[2]*lens[1]
-                                # elapsed = int(time()) - start_time
-                                # if elapse % 100 == 0:
-                print(ctime()[10:20], i0, i1, i2, i3, i4, i5, i6, cnt)
-
-    # ищем и убираем повторяющиеся позиции
-    # ll = [set(pos_f[0])]
-    # print(ll)
-    # for pos in pos_f[1:]:
-        # poss = set(pos)
-        # if not poss in ll:
-            # ll.append(poss)
-    # pprint(ll)
-    # print(len(ll))
