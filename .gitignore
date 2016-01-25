@@ -1,0 +1,8 @@
+soma
+soma_checker.c
+*.log
+*.o
+fig_*
+gala_*
+__pycache__/
+*_solver
